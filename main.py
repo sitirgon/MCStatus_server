@@ -120,6 +120,9 @@ if __name__ == '__main__':
     global_system = {}
     server = JavaServer.lookup(args.server_address, args.port)
     while True:
+        temp_system = global_system.copy()
+        global_system.clear()
+
         sleep(args.time * 60)
         info = server.status()
         if server.ping() > 100:
@@ -132,8 +135,6 @@ if __name__ == '__main__':
             sleep(180)
             continue
 
-        temp_system = global_system.copy()
-        global_system.clear()
         for player in info.players.sample:
             if player.name in temp_system:
                 global_system[player.name] = temp_system[player.name]
@@ -146,13 +147,13 @@ if __name__ == '__main__':
             if user:
                 log.log_add_info(f'Update time for {player.name}')
                 _temp = sql.select('UserInfo', UserID=user.ID)
-                if global_system[player.name] >= _temp.TheMostOnlineTimesInARow:
+                if global_system[player.name] > _temp.TheMostOnlineTimesInARow:
                     log.log_add_info(f'New record time for {player.name} is {global_system[player.name]}')
                     sql.update('UserInfo'
                                ,SAllOnlineTime=_temp.AllOnlineTime + args.time
                                ,STheMostOnlineTimesInARow=global_system[player.name]
                                ,CUserID=_temp.UserID)
-                elif global_system[player.name] < _temp.TheMostOnlineTimesInARow:
+                elif global_system[player.name] <= _temp.TheMostOnlineTimesInARow:
                     sql.update('UserInfo'
                            ,SAllOnlineTime=_temp.AllOnlineTime+args.time
                            ,CUserID=_temp.UserID)
