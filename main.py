@@ -105,7 +105,6 @@ class Logger:
         fd.write(self.get_date() + message)
         fd.close()
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get info from a minecraft server', allow_abbrev=False)
     parser.add_argument('-sa', '--server_address', metavar='server_adders',
@@ -118,7 +117,7 @@ if __name__ == '__main__':
 
     sql = SQL(args.server_address)
     log = Logger()
-    system = {}
+    global_system = {}
     server = JavaServer.lookup(args.server_address, args.port)
     while True:
         sleep(args.time * 60)
@@ -133,21 +132,27 @@ if __name__ == '__main__':
             sleep(180)
             continue
 
+        temp_system = global_system.copy()
+        global_system.clear()
         for player in info.players.sample:
-            if not player.name in system:
-                system[player.name] = 0
-            system[player.name] += 1
+            if player.name in temp_system:
+                global_system[player.name] = temp_system[player.name]
+            if player.name not in temp_system:
+                global_system[player.name] = 0
+
+        for player in info.players.sample:
+            global_system[player.name] += 1
             user = sql.select('Users', Username=player.name)
             if user:
                 log.log_add_info(f'Update time for {player.name}')
                 _temp = sql.select('UserInfo', UserID=user.ID)
-                if system[player.name] >= _temp.TheMostOnlineTimesInARow:
-                    log.log_add_info(f'New record time for {player.name} is {system[player.name]}')
+                if global_system[player.name] >= _temp.TheMostOnlineTimesInARow:
+                    log.log_add_info(f'New record time for {player.name} is {global_system[player.name]}')
                     sql.update('UserInfo'
                                ,SAllOnlineTime=_temp.AllOnlineTime + args.time
-                               ,STheMostOnlineTimesInARow=system[player.name]
+                               ,STheMostOnlineTimesInARow=global_system[player.name]
                                ,CUserID=_temp.UserID)
-                elif system[player.name] < _temp.TheMostOnlineTimesInARow:
+                elif global_system[player.name] < _temp.TheMostOnlineTimesInARow:
                     sql.update('UserInfo'
                            ,SAllOnlineTime=_temp.AllOnlineTime+args.time
                            ,CUserID=_temp.UserID)
