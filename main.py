@@ -6,14 +6,14 @@ from time import sleep
 
 
 class Users:
-    def __init__(self, id, username, creationdate):
+    def __init__(self, id, username, creationdate) -> None:
         self.ID = id
         self.Username = username
         self.CreationDate = creationdate
 
 
 class UserInfo:
-    def __init__(self, userid, allonlinetime, themostonlinetimesinarow, lastonline):
+    def __init__(self, userid, allonlinetime, themostonlinetimesinarow, lastonline) -> None:
         self.UserID = userid
         self.AllOnlineTime = allonlinetime
         self.TheMostOnlineTimesInARow = themostonlinetimesinarow
@@ -21,7 +21,7 @@ class UserInfo:
 
 
 class SQL:
-    def __init__(self, server_name):
+    def __init__(self, server_name) -> None:
         self.con = sqlite3.connect(server_name + '.db')
         self.cur = self.con.cursor()
         try:
@@ -44,7 +44,7 @@ class SQL:
         except sqlite3.OperationalError:
             pass
 
-    def select(self, table_name: str, **kwargs: str):
+    def select(self, table_name: str, **kwargs: str) -> object:
         argv = [key + '=' + "'" + str(value) + "'" for key, value in kwargs.items()]
         conditional = ' AND '.join(argv)
         if argv:
@@ -59,7 +59,7 @@ class SQL:
         elif table_name == 'UserInfo':
             return UserInfo(result[0], result[1], result[2], result[3])
 
-    def insert(self, table_name: str, **kwargs: str):
+    def insert(self, table_name: str, **kwargs: str) -> int:
         columns = []
         values = []
         for key, value in kwargs.items():
@@ -72,7 +72,7 @@ class SQL:
         self.con.commit()
         return 1
 
-    def update(self, table_name: str, **kwargs):
+    def update(self, table_name: str, **kwargs) -> int:
         argv = [key + '=' + "'" + str(value) + "'" for key, value in kwargs.items()]
         conditional = [i[1:] for i in argv if i[0] == 'C']
         set_update = [i[1:] for i in argv if i[0] == 'S']
@@ -87,7 +87,7 @@ class SQL:
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self) -> None:
         self.log_name = datetime.now().strftime("%Y-%m-%d") + '.txt'
         now = datetime.now()
         fd = open(self.log_name, 'a')
@@ -99,11 +99,17 @@ class Logger:
         now = datetime.now()
         return now.strftime("[%Y-%m-%d]-[%H:%M:%S]:: ")
 
-    def log_add_info(self, message):
+    def log_add_info(self, message) -> None:
         message += '\n'
         fd = open(self.log_name, 'a')
         fd.write(self.get_date() + message)
         fd.close()
+
+    def check_date(self) -> None:
+        _temp = datetime.now().strftime("%Y-%m-%d") + '.txt'
+        if _temp > self.log_name:
+            self.log_name = _temp
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get info from a minecraft server', allow_abbrev=False)
@@ -120,6 +126,8 @@ if __name__ == '__main__':
     global_system = {}
     server = JavaServer.lookup(args.server_address, args.port)
     while True:
+        log.check_date()
+
         temp_system = global_system.copy()
         global_system.clear()
 
