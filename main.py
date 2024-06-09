@@ -124,8 +124,21 @@ if __name__ == '__main__':
         global_system.clear()
 
         sleep(args.time * 60)
-        info = server.status()
-        if server.ping() > 100:
+        try:
+            info = server.status()
+        except ConnectionRefusedError:
+            log.log_add_info("Server status failed 'ConnectionRefusedError', I am starting second try")
+            server = JavaServer.lookup(args.server_address, args.port)
+            info = server.status()
+
+        try:
+            ping = server.ping()
+        except ConnectionRefusedError:
+            log.log_add_info("Server ping failed 'ConnectionRefusedError', I am starting second try")
+            server = JavaServer.lookup(args.server_address, args.port)
+            ping = server.ping()
+
+        if ping > 200:
             log.log_add_info('Server timeout > 100s')
             sleep(180)
             server = JavaServer.lookup(args.server_address, args.port)
